@@ -1,0 +1,11 @@
+pandas
+openpyxl
+numpy
+matplotlib
+librosa
+scikit-learn
+seaborn
+pillow
+torch
+torchaudio
+liac-arff
