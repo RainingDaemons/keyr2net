@@ -61,34 +61,6 @@ class Utils():
         self.dataset_type = DATASET_TYPE
 
     def start(self):
-        if (self.dataset_type == "cqt"):
-            # Procesamiento en paralelo
-            with tqdm_joblib(tqdm(desc="Procesando audios", total=len(self.rows))):
-                results = Parallel(n_jobs=os.cpu_count(), prefer="threads")(
-                    delayed(self.safe_procesar_fila)(row) for row in self.rows
-                )
-
-            # Filtrar espectrogramas válidos
-            cqt_spectrograms = []
-            labels = []
-
-            for res in results:
-                if res is not None:
-                    cqt_spectrograms.append(res[0])
-                    labels.append(res[1])
-            
-            # Guardar dataset
-            DATASET_PATH = "datasets//" + self.dataset_name + ".pt"
-            try:
-                torch.save({
-                    'cqt': torch.stack(cqt_spectrograms), # (N, 128, T)
-                    'labels': labels
-                }, DATASET_PATH)
-                print(colored(f"\nDataset {DATASET_PATH} guardado correctamente", 'green'))
-            except Exception as e:
-                print(colored(f"\n[!] Error: No se pudo guardar el dataset {DATASET_PATH}", 'red'))
-                print(e)
-        
         if (self.dataset_type == "logspec"):
             # Procesamiento en parelelo
             with tqdm_joblib(tqdm(desc="Procesando audios", total=len(self.rows))):
@@ -136,34 +108,5 @@ class Utils():
             except Exception as e:
                 print(colored(f"\n[!] Error: No se pudo guardar el dataset {DATASET_PATH}", 'red'))
                 print(e)
-        
-        elif (self.dataset_type == "mel"):
-            # Procesar con joblib
-            results = Parallel(n_jobs=4, prefer="threads")( 
-                delayed(self.safe_procesar_fila)(row) for row in tqdm(self.rows)
-            )
-
-            # Filtrar resultados válidos y eliminar tensores vacíos
-            mel_spectrograms_filtered = []
-            labels_filtered = []
-
-            for res in results:
-                if res is not None:
-                    mel, label = res
-                    if mel is not None and mel.numel() > 0:
-                        mel_spectrograms_filtered.append(mel)
-                        labels_filtered.append(label)
-                    else:
-                        print(f"Audio descartado por log-mel vacío: {label}")
-
-            # Guardar dataset
-            DATASET_PATH = "datasets//" + self.dataset_name + ".pt"
-            try:
-                torch.save({
-                    'mel_spectrograms': torch.stack(mel_spectrograms_filtered), # (N, 128, T)
-                    'labels': labels_filtered
-                }, DATASET_PATH)
-                print(colored(f"\nDataset {DATASET_PATH} guardado correctamente", 'green'))
-            except Exception as e:
-                print(colored(f"\n[!] Error: No se pudo guardar el dataset {DATASET_PATH}", 'red'))
-                print(e)
+        else:
+            print(colored(f"[!] Opción ingresada no válida", 'red'))

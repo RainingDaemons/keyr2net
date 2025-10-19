@@ -9,7 +9,6 @@
 
 import torch
 from sklearn.model_selection import train_test_split
-from termcolor import colored
 
 class LoadDataset:
     def __init__(self):

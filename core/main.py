@@ -50,7 +50,6 @@ if __name__ == "__main__":
     model_train.setup(model, MODEL_NAME, DATASET_NAME, NUM_EPOCHS, y_train, unique_labels, train_loader, val_loader)
     model_dict = model_train.start()
 
-    #model_dict = "cnneef_benchmark_musicbench_logspec"
     print(colored("\n[Paso 6] Validando modelo...", 'yellow'))
     model_test = Test()
     model_test.setup(model, gradcam_layer, MODEL_NAME, DATASET_NAME, model_dict, test_loader)

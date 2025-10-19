@@ -13,10 +13,10 @@ Este proyecto está organizado a través de la siguiente estructura de carpetas:
 | Carpeta | Contenido | Propósito |
 | :--- | :--- | :--- |
 | **`analysis/`** | Jupyter Notebooks (`.ipynb`) y código Python (`.py`) | Análisis exploratorio de los datos, transformación de audio en log-magnitude spectrograms (logspec) para el entrenamiento de los modelos |
-| **`annotations/`** | Archivos delimitados por comas (`.csv`) | Anotaciones de datos relevantes para posteriomente crear los datasets |
+| **`annotations/`** | Archivos delimitados por comas (`.csv`) | Anotaciones relevantes de los datos con etiquetas procesadas |
 | **`audio/`** | Audios (`.wav`) | Datos de los datasets originales de estudio (F10 y MB) sin procesar |
 | **`core/`** | Código Python (`.py`) | Módulos principales del proyecto y pipeline de carga, entrenamiento y testeo de modelos |
-| **`datasets/`** | Archivos en formato torch (`.pt`) | Datasets ya procesados listos para el entrenamiento de modelos |
+| **`datasets/`** | Archivos en formato torch (`.pt`) | Datasets listos para utilizar en el entrenamiento de modelos |
 | **`gradcam/`** | Imágenes (`.png`) | Comparación del input y mapa de calor obtenido por la GradCAM para una clase predicha |
 | **`logs/`** | Archivos de texto plano (`.txt`) | Logs con resultados del entrenamiento y testeo de los modelos |
 | **`trained/`** | Archivos del modelo entrenado (`.pth`) | Repositorio para guardar y cargar distinas versiones de los clasificadores |
