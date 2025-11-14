@@ -91,11 +91,30 @@ class GradCAM:
         self.model.zero_grad()
         target.backward(retain_graph=True)
 
-        # Pesos = promedio espacial de los gradientes
-        weights = self.gradients.mean(dim=(2, 3), keepdim=True)
+        # Verificar
+        if self.gradients is None:
+            print("[!] GradCAM: No se registraron gradientes de target_layer")
+            return None
 
-        # Combinar pesos con activaciones
-        cam = (weights * self.activations).sum(dim=1, keepdim=True)
+        # Ajustar salida según dimensiones
+        if self.gradients.dim() == 4:
+            weights = self.gradients.mean(dim=(2, 3), keepdim=True)
+            cam = (weights * self.activations).sum(dim=1, keepdim=True)
+        
+        elif self.gradients.dim() == 3:
+            self.activations = self.activations.permute(0, 2, 1).unsqueeze(-1)
+            self.gradients = self.gradients.permute(0, 2, 1).unsqueeze(-1)
+            weights = self.gradients.mean(dim=(2, 3), keepdim=True)
+            cam = (weights * self.activations).sum(dim=1, keepdim=True)
+
+        elif self.gradients.dim() == 2:
+            weights = self.gradients.mean(dim=0, keepdim=True)
+            cam = (self.activations * weights).sum(dim=1, keepdim=True)
+            cam = cam.unsqueeze(-1).unsqueeze(-1)
+
+        else:
+            raise ValueError(f"[!] GradCAM: Dimensión de gradientes no soportada - {self.gradients.shape}")   
+
         cam = F.relu(cam)
 
         # Interpolar al tamaño deseado

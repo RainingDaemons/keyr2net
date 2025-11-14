@@ -121,24 +121,28 @@ class Test():
                         # Calcular bins relevantes
                         focus_bins = scale.calc(real_labels[pred_label])
 
-                        # Aplicar umbral de intensidad (> 50%)
+                        # Aplicar umbral de intensidad
                         heatmap_np = heatmap.squeeze()
                         total_activation = heatmap_np.sum()
 
-                        # Crear máscara de bins relevantes
-                        focus_mask = np.zeros_like(heatmap_np, dtype=bool)
-                        focus_mask[focus_bins, :] = True
+                        if total_activation <= 1e-8:
+                            focus_ratio = 0.0
+                            non_focus_ratio = 0.0
+                        else:
+                            # Crear máscara de bins relevantes
+                            focus_mask = np.zeros_like(heatmap_np, dtype=bool)
+                            focus_mask[focus_bins, :] = True
 
-                        # Activación en bins relevantes sobre el umbral
-                        focus_activation = heatmap_np[focus_mask].sum()
+                            # Activación en bins relevantes sobre el umbral
+                            focus_activation = heatmap_np[focus_mask].sum()
 
-                        # Activación en bins NO relevantes sobre el umbral
-                        non_focus_mask = ~focus_mask
-                        non_focus_activation = heatmap_np[non_focus_mask].sum()
+                            # Activación en bins NO relevantes sobre el umbral
+                            non_focus_mask = ~focus_mask
+                            non_focus_activation = heatmap_np[non_focus_mask].sum()
 
-                        # Calcular métricas
-                        focus_ratio = focus_activation / total_activation
-                        non_focus_ratio = non_focus_activation / total_activation
+                            # Calcular métricas
+                            focus_ratio = focus_activation / total_activation
+                            non_focus_ratio = non_focus_activation / total_activation
 
                         # Guardar totales
                         focus_total_ratio.append(focus_ratio)

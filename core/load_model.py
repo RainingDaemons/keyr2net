@@ -7,6 +7,10 @@
 @File         : load_model.py
 """
 
+from extra_models.cnn import CNN
+from extra_models.lstm import LSTM
+from extra_models.cnngru import CNNGRU
+
 from models.keyr2net import KeyR2Net
 from models.cnn14 import CNN14
 from models.resnet50 import ResNet50
@@ -26,5 +30,14 @@ class LoadModel():
         elif (NAME == "CNNEEF"):
             model = CNNEEF()
             return model, model.convs
+        elif (NAME == "CNN"):
+            model = CNN()
+            return model, model.conv3
+        elif (NAME == "LSTM"):
+            model = LSTM()
+            return model, model.fc
+        elif (NAME == "CNNGRU"):
+            model = CNNGRU()
+            return model, model.conv3
         else:
             return None

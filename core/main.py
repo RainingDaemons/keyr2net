@@ -19,9 +19,12 @@ from model_test import Test
 DATASET_NAME = "benchmark_musicbench_logspec"
 #DATASET_NAME = "benchmark_fsl10k_logspec"
 #MODEL_NAME = "KEYR2"
-MODEL_NAME = "CNN14"
+#MODEL_NAME = "CNN14"
 #MODEL_NAME = "RESNET50"
 #MODEL_NAME = "CNNEEF"
+#MODEL_NAME = "CNN"
+#MODEL_NAME = "LSTM"
+MODEL_NAME = "CNNGRU"
 NUM_EPOCHS = 100
 
 if __name__ == "__main__":
