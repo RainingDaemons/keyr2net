@@ -1,5 +1,5 @@
 """
-@Date         : 14-10-2025
+@Date         : 18-11-2025
 @Author       : Felipe Gutiérrez Carilao
 @Affiliation  : Universidad Andrés Bello
 @Email        : f.gutierrezcarilao@uandresbello.edu
@@ -11,8 +11,9 @@ from termcolor import colored
 
 from dataset_logspec import DatasetLOGSPEC
 
-DATASET_NAME = "benchmark_fsl10k"
-#DATASET_NAME = "benchmark_musicbench"
+DATASET_NAME = "giantsteps"
+#DATASET_NAME = "fsl10k"
+#DATASET_NAME = "musicbench"
 DATASET_TYPE = "LOGSPEC"
 
 if __name__ == "__main__":

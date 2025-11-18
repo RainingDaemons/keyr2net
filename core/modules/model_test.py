@@ -1,9 +1,9 @@
 """
-@Date         : 14-10-2025
+@Date         : 18-11-2025
 @Author       : Felipe Gutiérrez Carilao
 @Affiliation  : Universidad Andrés Bello
 @Email        : f.gutierrezcarilao@uandresbello.edu
-@Module       : core
+@Module       : core/modules
 @File         : model_test.py
 """
 
@@ -15,9 +15,9 @@ import seaborn as sns
 from sklearn.metrics import classification_report, confusion_matrix
 from termcolor import colored
 
-from metrics import Metrics
-from logger import Logger
-from utils import GradCAM, ScaleBins
+from .metrics import Metrics
+from .logger import Logger
+from .utils import GradCAM, ScaleBins
 
 class Test():
     def __init__(self):
@@ -29,12 +29,13 @@ class Test():
         self.test_loader = None
         self.device = None
 
-    def setup(self, MODEL, GRADCAM_LAYER, MODEL_NAME, DATASET_NAME, MODEL_DICT, TEST_LOADER):
+    def setup(self, MODEL, GRADCAM_LAYER, MODEL_NAME, DATASET_NAME, DATASET_SEED, TEST_LOADER):
         self.model = MODEL
         self.gradcam_layer = GRADCAM_LAYER
         self.model_name = MODEL_NAME
         self.dataset_name = DATASET_NAME
-        self.model_dict = "trained//" + MODEL_DICT + ".pth"
+        self.dataset_seed = str(DATASET_SEED)
+        self.model_dict = f"trained/{self.model_name.lower()}/{self.dataset_name}/" + self.dataset_seed + ".pth"
         self.test_loader = TEST_LOADER
 
     def start(self):
@@ -59,9 +60,8 @@ class Test():
         self.model.eval()
 
         # Definir nombre a guardar del modelo
-        LOGGER_NAME = self.model_name.lower() + "_" + self.dataset_name + "_test"
         logger = Logger()
-        logger.setup(LOGGER_NAME, "logs")
+        logger.setup(self.dataset_seed + "_test", f"logs/{self.model_name.lower()}/{self.dataset_name}")
 
         # Inicializar GradCAM
         gradcam = GradCAM(self.model, target_layer=self.gradcam_layer)
@@ -71,10 +71,9 @@ class Test():
         # Logear focus de bins
         scale = ScaleBins()
         scale_logger = Logger()
-        SCALE_LOGGER_NAME = self.model_name.lower() + "_" + self.dataset_name + "_bins"
-        scale_logger.setup(SCALE_LOGGER_NAME, "logs")
+        scale_logger.setup(self.dataset_seed + "_bins", f"logs/{self.model_name.lower()}/{self.dataset_name}")
 
-        os.makedirs(f"gradcam/{self.model_name.lower() + "_" + self.dataset_name}", exist_ok=True)
+        os.makedirs(f"gradcam/{self.model_name.lower()}/{self.dataset_name}/{self.dataset_seed}", exist_ok=True)
 
         # Evaluar modelo
         print(colored("\nEjecutando gradcam...", 'blue'))
@@ -169,7 +168,7 @@ class Test():
                     plt.imshow(heatmap, aspect="auto", origin="lower", cmap="jet", alpha=0.5)
                     plt.title("Grad-CAM")
 
-                    save_path = os.path.join("gradcam", self.model_name.lower() + "_" + self.dataset_name, SAVE_NAME + ".png")
+                    save_path = os.path.join("gradcam", self.model_name.lower(), self.dataset_name, self.dataset_seed, SAVE_NAME + ".png")
                     plt.savefig(save_path)
                     plt.close()
 
@@ -193,6 +192,9 @@ class Test():
         y_pred_classes = torch.cat(all_preds).numpy()
         y_true_classes = torch.cat(all_labels).numpy()
 
+        cm_name = f"{self.model_name.lower()}/{self.dataset_name}/{self.dataset_seed}"
+        os.makedirs(f"cm/{cm_name}", exist_ok=True)
+
         print(colored("Calculando resultados...", 'blue'))
         print("\nClassification Report:")
         print(classification_report(y_true_classes, y_pred_classes, target_names=real_labels))
@@ -208,7 +210,7 @@ class Test():
         plt.xticks(rotation=45, ha='right')
         plt.yticks(rotation=0)
         plt.tight_layout()
-        plt.show()
+        plt.savefig(f"cm/{cm_name}/confusion_matrix.png", dpi=300)
 
         # Mostrar métricas globales
         logger.new_line("\nComparación de etiquetas reales vs predichas:")
@@ -238,3 +240,5 @@ class Test():
 
         print(logs)
         logger.new_line(logs)
+
+        return test_acc, test_f1

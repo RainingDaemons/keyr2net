@@ -1,5 +1,5 @@
 """
-@Date         : 14-10-2025
+@Date         : 18-11-2025
 @Author       : Felipe Gutiérrez Carilao
 @Affiliation  : Universidad Andrés Bello
 @Email        : f.gutierrezcarilao@uandresbello.edu
@@ -24,7 +24,9 @@ class Utils():
     def procesar_fila(self, row_dict):
         try:
             dataset = row_dict['dataset']
-            if dataset == "fsl10k":
+            if dataset == "giantsteps":
+                base_path = "./audio/giantsteps-mtg-key-dataset"
+            elif dataset == "fsl10k":
                 base_path = "./audio/fsl10k-dataset"
             elif dataset == "musicbench":
                 base_path = "./audio/musicbench-dataset"

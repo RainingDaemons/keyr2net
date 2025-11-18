@@ -3,7 +3,7 @@
 @Author       : Felipe Gutiérrez Carilao
 @Affiliation  : Universidad Andrés Bello
 @Email        : f.gutierrezcarilao@uandresbello.edu
-@Module       : models
+@Module       : core/models
 @File         : keyr2net.py
 """
 

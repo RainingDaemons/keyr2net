@@ -3,7 +3,7 @@
 @Author       : Felipe Gutiérrez Carilao
 @Affiliation  : Universidad Andrés Bello
 @Email        : f.gutierrezcarilao@uandresbello.edu
-@Module       : models
+@Module       : core/models
 @File         : resnet50.py
 
 @Credits      : Implemented using Torchvision Pretrained ResNet50 model, based in original paper "Deep Residual Learning for Image Recognition"

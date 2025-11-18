@@ -3,7 +3,7 @@
 @Author       : Felipe Gutiérrez Carilao
 @Affiliation  : Universidad Andrés Bello
 @Email        : f.gutierrezcarilao@uandresbello.edu
-@Module       : extra_models
+@Module       : core/extra_models
 @File         : cnn.py
 """
 

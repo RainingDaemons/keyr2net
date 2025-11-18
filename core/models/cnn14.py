@@ -3,7 +3,7 @@
 @Author       : Felipe Gutiérrez Carilao
 @Affiliation  : Universidad Andrés Bello
 @Email        : f.gutierrezcarilao@uandresbello.edu
-@Module       : models
+@Module       : core/models
 @File         : cnn14.py
 
 @Credits      : Code adapted from "PANNs: Large-Scale Pretrained Audio Neural Networks for Audio Pattern Recognition"

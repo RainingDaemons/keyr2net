@@ -3,7 +3,7 @@
 @Author       : Felipe Gutiérrez Carilao
 @Affiliation  : Universidad Andrés Bello
 @Email        : f.gutierrezcarilao@uandresbello.edu
-@Module       : models
+@Module       : core/models
 @File         : cnneef.py
 
 @Credits      : Code adapted from "End-to-End Musical Key Estimation Using a Convolutional Neural Network"

@@ -1,20 +1,21 @@
 """
-@Date         : 14-10-2025
+@Date         : 18-11-2025
 @Author       : Felipe Gutiérrez Carilao
 @Affiliation  : Universidad Andrés Bello
 @Email        : f.gutierrezcarilao@uandresbello.edu
-@Module       : core
+@Module       : core/modules
 @File         : model_train.py
 """
 
+import os
 import torch
 import time
 from collections import Counter
 from termcolor import colored
 
-from utils import ClassBalancedLoss, EarlyStopping
-from metrics import Metrics
-from logger import Logger
+from .utils import ClassBalancedLoss, EarlyStopping
+from .metrics import Metrics
+from .logger import Logger
 
 class Train():
     def __init__(self):
@@ -29,10 +30,11 @@ class Train():
         self.train_loader = None
         self.val_loader = None
 
-    def setup(self, MODEL, MODEL_NAME, DATASET_NAME, EPOCHS, Y_TRAIN, UNIQUE_LABELS, TRAIN_LOADER, VAL_LOADER):
+    def setup(self, MODEL, MODEL_NAME, DATASET_NAME, DATASET_SEED, EPOCHS, Y_TRAIN, UNIQUE_LABELS, TRAIN_LOADER, VAL_LOADER):
         self.model = MODEL
         self.model_name = MODEL_NAME
         self.dataset_name = DATASET_NAME
+        self.dataset_seed = str(DATASET_SEED)
         self.num_epochs = EPOCHS
         self.y_train = Y_TRAIN
         self.unique_labels = UNIQUE_LABELS
@@ -65,9 +67,8 @@ class Train():
         scaler = torch.amp.GradScaler()
 
         # Definir nombre a guardar del modelo
-        new_name = self.model_name.lower() + "_" + self.dataset_name
         logger = Logger()
-        logger.setup(new_name + "_train", "logs")
+        logger.setup(self.dataset_seed + "_train", f"logs/{self.model_name.lower()}/{self.dataset_name}")
 
         start_time = time.time()
         for epoch in range(self.num_epochs):
@@ -153,12 +154,11 @@ class Train():
         logger.new_line(logs)
 
         # Guardar modelo
-        new_name_model = new_name + ".pth"
-        model_path = "trained//" + new_name_model
+        model_path = f"trained/{self.model_name.lower()}/{self.dataset_name}/" + self.dataset_seed + ".pth"
+        os.makedirs(os.path.dirname(model_path), exist_ok=True)
         try:
             torch.save(self.model.state_dict(), model_path)
-            print(colored(f"\n[!] Modelo {new_name_model} guardado correctamente.", 'blue'))
-            return new_name
+            print(colored(f"\n[!] Modelo {model_path} guardado correctamente.", 'blue'))
         except:
-            print(colored(f"\n[!] Error: No se pudo guardar el modelo {new_name_model}", 'red'))
+            print(colored(f"\n[!] Error: No se pudo guardar el modelo {model_path}", 'red'))
             return None

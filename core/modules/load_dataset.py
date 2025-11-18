@@ -1,9 +1,9 @@
 """
-@Date         : 14-10-2025
+@Date         : 18-11-2025
 @Author       : Felipe Gutiérrez Carilao
 @Affiliation  : Universidad Andrés Bello
 @Email        : f.gutierrezcarilao@uandresbello.edu
-@Module       : core
+@Module       : core/modules
 @File         : model_train.py
 """
 
@@ -13,6 +13,7 @@ from sklearn.model_selection import train_test_split
 class LoadDataset:
     def __init__(self):
         self.DATASET_NAME = ""
+        self.DATASET_SEED = ""
         self.NUM_PARTS = 0
 
         self.X_train = ""
@@ -51,12 +52,12 @@ class LoadDataset:
 
         # Asignar al conjunto de prueba el 20%
         X_train_val, X_test, y_train_val, y_test = train_test_split(
-            X, y, test_size=0.2, random_state=123
+            X, y, test_size=0.2, random_state=self.DATASET_SEED
         )
 
         # Separar conjunto de entrenamiento y validación
         X_train, X_val, y_train, y_val = train_test_split(
-            X_train_val, y_train_val, test_size=0.125, random_state=123, stratify=y_train_val
+            X_train_val, y_train_val, test_size=0.125, random_state=self.DATASET_SEED, stratify=y_train_val
         )
 
         # Guardar dataset procesado
@@ -68,10 +69,13 @@ class LoadDataset:
         self.y_test = y_test
         self.unique_labels = unique_labels
 
-    def setup(self, NAME):
+    def setup(self, NAME, SEED):
         self.DATASET_NAME = NAME
+        self.DATASET_SEED = SEED
 
-        if ("fsl10k" in NAME):
+        if ("giantsteps" in NAME):
+            self.NUM_PARTS = 1
+        elif ("fsl10k" in NAME):
             self.NUM_PARTS = 1
         elif ("musicbench" in NAME):
             self.NUM_PARTS = 3

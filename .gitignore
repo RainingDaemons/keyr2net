@@ -1,6 +1,8 @@
 audio/*
+cm/*
 datasets/*
 gradcam/*
 logs/*
 trained/*
+results/*
 __pycache__
