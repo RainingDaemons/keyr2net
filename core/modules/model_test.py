@@ -1,5 +1,5 @@
 """
-@Date         : 18-11-2025
+@Date         : 24-11-2025
 @Author       : Felipe Gutiérrez Carilao
 @Affiliation  : Universidad Andrés Bello
 @Email        : f.gutierrezcarilao@uandresbello.edu
@@ -7,6 +7,7 @@
 @File         : model_test.py
 """
 
+import time
 import torch
 import os
 import numpy as np
@@ -28,8 +29,9 @@ class Test():
         self.model_dict = ""
         self.test_loader = None
         self.device = None
+        self.ablation_test = None
 
-    def setup(self, MODEL, GRADCAM_LAYER, MODEL_NAME, DATASET_NAME, DATASET_SEED, TEST_LOADER):
+    def setup(self, MODEL, GRADCAM_LAYER, MODEL_NAME, DATASET_NAME, DATASET_SEED, TEST_LOADER, ABLATION_TEST=False):
         self.model = MODEL
         self.gradcam_layer = GRADCAM_LAYER
         self.model_name = MODEL_NAME
@@ -37,6 +39,7 @@ class Test():
         self.dataset_seed = str(DATASET_SEED)
         self.model_dict = f"trained/{self.model_name.lower()}/{self.dataset_name}/" + self.dataset_seed + ".pth"
         self.test_loader = TEST_LOADER
+        self.ablation_test = ABLATION_TEST
 
     def start(self):
         real_labels = ['A#:major', 'A#:minor', 'A:major', 'A:minor',
@@ -77,8 +80,11 @@ class Test():
 
         # Evaluar modelo
         print(colored("\nEjecutando gradcam...", 'blue'))
-        focus_total_ratio, focus_total_nonradio, focus_total = [], [], 0
+        fr_values = []
+        invalid_count, total_count = 0, 0
         all_preds, all_outputs, all_labels = [], [], []
+
+        start_time = time.time()
         for batch_x, batch_y in self.test_loader:
             batch_x, batch_y = batch_x.to(self.device), batch_y.to(self.device)
 
@@ -93,14 +99,17 @@ class Test():
             all_labels.append(batch_y.cpu())
 
             # ---------- Aplicar GradCAM ----------
-            for i in range(batch_x.size(0)):
-                true_label = batch_y[i].item()
-                pred_label = preds[i].item()
+            if (self.ablation_test == False):
+                for i in range(batch_x.size(0)):
+                    total_count += 1
+                    true_label = batch_y[i].item()
+                    pred_label = preds[i].item()
 
-                # Guardar solo hasta 10 ejemplos por clase
-                if examples_per_class[true_label] < max_examples:
-                    SAVE_NAME = f"class_{true_label}_{examples_per_class[true_label]}"
-
+                    # Contabilizar hasta 10 ejemplos por clase
+                    save_this = examples_per_class[true_label] < max_examples
+                    if save_this:
+                        SAVE_NAME = f"class_{true_label}_{examples_per_class[true_label]}"
+                    
                     # Guardar estado
                     was_training = self.model.training
                     self.model.eval()
@@ -109,6 +118,7 @@ class Test():
                     cudnn_enabled = torch.backends.cudnn.enabled
                     torch.backends.cudnn.enabled = False
 
+                    # Grad-CAM
                     heatmap = gradcam.generate(batch_x[i].unsqueeze(0), class_idx=pred_label)
 
                     # Restaurar
@@ -116,73 +126,59 @@ class Test():
                     self.model.train(was_training)
 
                     # ---------- Focus Bins ----------
-                    if true_label == pred_label:
-                        # Calcular bins relevantes
-                        focus_bins = scale.calc(real_labels[pred_label])
+                    scale_name_true = real_labels[true_label]
+                    scale_bins_true = scale.calc(scale_name_true)
 
-                        # Aplicar umbral de intensidad
-                        heatmap_np = heatmap.squeeze()
-                        total_activation = heatmap_np.sum()
+                    fr_result = Metrics.focusratio(heatmap,scale_bins_true)
 
-                        if total_activation <= 1e-8:
-                            focus_ratio = 0.0
-                            non_focus_ratio = 0.0
-                        else:
-                            # Crear máscara de bins relevantes
-                            focus_mask = np.zeros_like(heatmap_np, dtype=bool)
-                            focus_mask[focus_bins, :] = True
+                    # Excluir mapas gradcam sin información
+                    if float(heatmap.var()) < 1e-12:
+                        invalid_count += 1
+                        fr_result = np.nan
 
-                            # Activación en bins relevantes sobre el umbral
-                            focus_activation = heatmap_np[focus_mask].sum()
+                    fr_values.append(fr_result)
 
-                            # Activación en bins NO relevantes sobre el umbral
-                            non_focus_mask = ~focus_mask
-                            non_focus_activation = heatmap_np[non_focus_mask].sum()
+                    # Log opcional por muestra
+                    scale_logger.new_line(f"fr_result: {0.0 if np.isnan(fr_result) else fr_result:.4f}")
 
-                            # Calcular métricas
-                            focus_ratio = focus_activation / total_activation
-                            non_focus_ratio = non_focus_activation / total_activation
+                    # Guardar imagenes de gradcam contabilizadas
+                    if save_this:
+                        input_img = batch_x[i].squeeze().cpu().numpy()
+                        plt.figure(figsize=(10, 4))
+                        plt.subplot(1, 2, 1)
+                        plt.imshow(input_img, aspect="auto", origin="lower", cmap="magma")
+                        plt.title(f"Input (True: {real_labels[true_label]}, Pred: {real_labels[pred_label]})")
 
-                        # Guardar totales
-                        focus_total_ratio.append(focus_ratio)
-                        focus_total_nonradio.append(non_focus_ratio)
-                        focus_total += 1
+                        plt.subplot(1, 2, 2)
+                        plt.imshow(input_img, aspect="auto", origin="lower", cmap="magma")
+                        plt.imshow(heatmap, aspect="auto", origin="lower", cmap="jet", alpha=0.5)
+                        plt.title("Grad-CAM")
 
-                        logs = (
-                            f"\nFile: {SAVE_NAME}.png\n"
-                            f"Label: {real_labels[pred_label]}\n"
-                            f"Focus Ratio: {focus_ratio:.2%}\n"
-                            f"Non-Focus Ratio: {non_focus_ratio:.2%}\n"
-                        )
-                        scale_logger.new_line(logs)
+                        save_path = os.path.join("gradcam", self.model_name.lower(), self.dataset_name, self.dataset_seed, SAVE_NAME + ".png")
+                        plt.savefig(save_path)
+                        plt.close()
 
-                    # Guardar input y gradcam
-                    input_img = batch_x[i].squeeze().cpu().numpy()
-                    plt.figure(figsize=(10, 4))
-                    plt.subplot(1, 2, 1)
-                    plt.imshow(input_img, aspect="auto", origin="lower", cmap="magma")
-                    plt.title(f"Input (True: {real_labels[true_label]}, Pred: {real_labels[pred_label]})")
+                        examples_per_class[true_label] += 1
 
-                    plt.subplot(1, 2, 2)
-                    plt.imshow(input_img, aspect="auto", origin="lower", cmap="magma")
-                    plt.imshow(heatmap, aspect="auto", origin="lower", cmap="jet", alpha=0.5)
-                    plt.title("Grad-CAM")
+        # Calcular estadísticas finales
+        fr_mean = 0
+        logs = ""
+        if (self.ablation_test == False):
+            def stats(arr):
+                a = np.array(arr, dtype=float)
+                a = a[~np.isnan(a)]
+                if a.size == 0:
+                    return 0.0, 0.0, 0.0, 0
+                mean = a.mean()
+                std = a.std(ddof=1) if a.size > 1 else 0.0
+                var = a.var(ddof=1) if a.size > 1 else 0.0
+                return mean, std, var, a.size
 
-                    save_path = os.path.join("gradcam", self.model_name.lower(), self.dataset_name, self.dataset_seed, SAVE_NAME + ".png")
-                    plt.savefig(save_path)
-                    plt.close()
+            fr_mean, fr_std, fr_var, n_valid = stats(fr_values)
 
-                    examples_per_class[true_label] += 1
-
-        # Calcular promedio de focus bins
-        avg_focus_ratio = Metrics.focus_ratio(focus_total_ratio, focus_total)
-        avg_focus_nonratio = 1 - focus_ratio
-
-        logs = (
-            f"\nTotal bins: {focus_total}\n"
-            f"Average Focus Ratio: {avg_focus_ratio:.2%}\n"
-            f"Average Non-Focus Ratio: {avg_focus_nonratio:.2%}\n"
-        )
+            logs = (f"FR Stats (n={n_valid}/{total_count} -> Mean={fr_mean:.4f} - Std={fr_std:.4f} - Var={fr_var:.4f}")
+        else:
+            logs = (f"[!] Perfoming ablation test, skipping gradcam...")
         
         print(logs)
         scale_logger.new_line(logs)
@@ -241,4 +237,14 @@ class Test():
         print(logs)
         logger.new_line(logs)
 
-        return test_acc, test_f1
+        # Calcular tiempo
+        end_time = time.time()
+        elapsed = end_time - start_time
+        minutes = int(elapsed // 60)
+        seconds = int(elapsed % 60)
+        logs = (f"\nElapsed time: {minutes}m {seconds}s")
+
+        print(colored(logs, 'green'))
+        logger.new_line(logs)
+
+        return test_acc, test_f1, fr_mean

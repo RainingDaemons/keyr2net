@@ -1,5 +1,5 @@
 """
-@Date         : 18-11-2025
+@Date         : 24-11-2025
 @Author       : Felipe Gutiérrez Carilao
 @Affiliation  : Universidad Andrés Bello
 @Email        : f.gutierrezcarilao@uandresbello.edu
@@ -23,8 +23,14 @@ class Cleanup():
 
     def start(self):
         # Archivos a eliminar
+        """
         files_to_delete = [
             os.path.join("logs", self.model_name, self.dataset_name, f"{self.dataset_seed}_train.txt"),
+            os.path.join("logs", self.model_name, self.dataset_name, f"{self.dataset_seed}_test.txt"),
+            os.path.join("logs", self.model_name, self.dataset_name, f"{self.dataset_seed}_bins.txt")
+        ]
+        """
+        files_to_delete = [
             os.path.join("logs", self.model_name, self.dataset_name, f"{self.dataset_seed}_test.txt"),
             os.path.join("logs", self.model_name, self.dataset_name, f"{self.dataset_seed}_bins.txt")
         ]

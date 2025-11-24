@@ -4,7 +4,7 @@
 @Affiliation  : Universidad Andrés Bello
 @Email        : f.gutierrezcarilao@uandresbello.edu
 @Module       : core
-@File         : benchmark.py
+@File         : ablation_test.py
 """
 
 from termcolor import colored
@@ -18,38 +18,33 @@ from modules.model_test import Test
 from modules.results import Results
 from modules.stats import Stats
 
-#MODEL_NAME = "KEYR2"
-#MODEL_NAME = "CNN14"
-#MODEL_NAME = "RESNET50"
-#MODEL_NAME = "CNNEEF"
-MODEL_NAME = "AST"
-#MODEL_NAME = "VIT"
-#MODEL_NAME = "SWIN2"
-
-DATASET_LIST = ["musicbench_logspec",
-                "fsl10k_logspec",
-                "giantsteps_logspec"]
+DATASET_NAME = "musicbench_logspec"
+MODEL_LIST = ["CNN",
+            "LSTM",
+            "CNNGRU"]
 SEED_LIST = [123, 456, 789]
 NUM_EPOCHS = 100
 
-DATASET_TOTAL = len(DATASET_LIST)
+MODEL_TOTAL = len(MODEL_LIST)
 SEED_TOTAL = len(SEED_LIST)
 
 if __name__ == "__main__":
+    print(colored(f"[!] Starting ablation test...\n", 'red'))
+
     results = Results()
-    results.setup(MODEL_NAME)
+    results.setup(None, True)
 
     stats = Stats()
-    stats.setup(MODEL_NAME, DATASET_LIST)
-    
-    for ds_i in range(DATASET_TOTAL):
-        DATASET_NAME = DATASET_LIST[ds_i]
+    stats.setup(None, MODEL_LIST, True)
 
+    for md_i in range(MODEL_TOTAL):
+        MODEL_NAME = MODEL_LIST[md_i]
+    
         for sd_i in range(SEED_TOTAL):
             SEED = SEED_LIST[sd_i]
 
             print(colored(f"=====================", 'red'))
-            print(colored(f"[!] Dataset: {DATASET_NAME}", 'red'))
+            print(colored(f"[!] Model: {MODEL_NAME}", 'red'))
             print(colored(f"[!] Run: {sd_i+1}/{SEED_TOTAL}", 'red'))
             print(colored(f"[!] Seed: {SEED}", 'red'))
             print(colored(f"=====================\n", 'red'))
@@ -81,11 +76,11 @@ if __name__ == "__main__":
 
             print(colored("\n[Paso 6] Validando modelo...", 'yellow'))
             model_test = Test()
-            model_test.setup(model, gradcam_layer, MODEL_NAME, DATASET_NAME, SEED, test_loader)
+            model_test.setup(model, gradcam_layer, MODEL_NAME, DATASET_NAME, SEED, test_loader, True)
             test_acc, test_f1, test_fr = model_test.start()
 
             print(colored("\n[Paso 7] Guardando resultados...", 'yellow'))
-            results.save(DATASET_NAME, SEED, test_acc, test_f1, test_fr)
+            results.save(MODEL_NAME.lower(), SEED, test_acc, test_f1, test_fr)
 
     print(colored("\n[!] Calculando resultados finales...", 'red'))
     stats.calc()
