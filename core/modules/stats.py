@@ -21,8 +21,10 @@ class Stats():
         self.list = ITEM_LIST
         self.ablation_test = ABLATION_TEST
 
-        if (self.ablation_test == False):
+        if (self.ablation_test == False and FILE_NAME is not None):
             self.file_name = FILE_NAME.lower()
+        if (self.ablation_test == False and FILE_NAME is None):
+            self.file_name = "explainability"
         else:
             self.file_name = "ablation"
         
@@ -41,8 +43,10 @@ class Stats():
 
         for i in range(len(self.list)):
             df_temp = ""
-            if (self.ablation_test == False):
+            if (self.ablation_test == False and self.file_name != "explainability"):
                 df_temp = df[df["dataset"] == self.list[i]]
+            if (self.ablation_test == False and self.file_name == "explainability"):
+                df_temp = df[df["model"] == self.list[i].lower()]
             else:
                 df_temp = df[df["model"] == self.list[i].lower()]
 

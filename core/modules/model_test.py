@@ -80,7 +80,7 @@ class Test():
 
         # Evaluar modelo
         print(colored("\nEjecutando gradcam...", 'blue'))
-        fr_values = []
+        fr_values, AB_values, NAB_values = [], [], []
         invalid_count, total_count = 0, 0
         all_preds, all_outputs, all_labels = [], [], []
 
@@ -129,7 +129,7 @@ class Test():
                     scale_name_true = real_labels[true_label]
                     scale_bins_true = scale.calc(scale_name_true)
 
-                    fr_result = Metrics.focusratio(heatmap,scale_bins_true)
+                    fr_result, AB, NAB, AB_pixels, NAB_pixels, activated_pixels, relevant_mask = Metrics.focusratio(heatmap, scale_bins_true)
 
                     # Excluir mapas gradcam sin información
                     if float(heatmap.var()) < 1e-12:
@@ -137,22 +137,50 @@ class Test():
                         fr_result = np.nan
 
                     fr_values.append(fr_result)
+                    AB_values.append(AB)
+                    NAB_values.append(NAB)
 
-                    # Log opcional por muestra
+                    # Log por muestra
                     scale_logger.new_line(f"fr_result: {0.0 if np.isnan(fr_result) else fr_result:.4f}")
 
                     # Guardar imagenes de gradcam contabilizadas
                     if save_this:
+                        # Obtener input
                         input_img = batch_x[i].squeeze().cpu().numpy()
-                        plt.figure(figsize=(10, 4))
+                        H, W = heatmap.shape
+
+                        overlay = np.zeros((H, W, 3), dtype=np.float32)
+
+                        # Pixeles relevantes en azul (Scale Bins)
+                        overlay[relevant_mask] = [0, 0, 1]
+
+                        # Pixeles AB en verde
+                        overlay[AB_pixels] = [0, 1, 0]
+
+                        # Pixeles NAB en rojo
+                        overlay[NAB_pixels] = [1, 0, 0]
+
+                        # ----- Plot -----
+                        plt.figure(figsize=(12, 6))
+
+                        # Input image
                         plt.subplot(1, 2, 1)
                         plt.imshow(input_img, aspect="auto", origin="lower", cmap="magma")
-                        plt.title(f"Input (True: {real_labels[true_label]}, Pred: {real_labels[pred_label]})")
+                        plt.title(f"Input\nTrue: {real_labels[true_label]} | Pred: {real_labels[pred_label]}")
 
+                        # Gradcam image colored
                         plt.subplot(1, 2, 2)
                         plt.imshow(input_img, aspect="auto", origin="lower", cmap="magma")
-                        plt.imshow(heatmap, aspect="auto", origin="lower", cmap="jet", alpha=0.5)
-                        plt.title("Grad-CAM")
+                        plt.imshow(heatmap, aspect="auto", origin="lower", cmap="jet", alpha=0.2)
+                        plt.imshow(overlay, aspect="auto", origin="lower", alpha=0.8)
+                        plt.title("Grad-CAM + AB (verde) / NAB (rojo) / Relevantes (azul)")
+
+                        # Caption
+                        plt.figtext(
+                            0.5, 0.01,
+                            f"AB = {AB:.4f} | NAB = {NAB:.4f} | FR = {fr_result:.4f}",
+                            ha="center", fontsize=12
+                        )
 
                         save_path = os.path.join("gradcam", self.model_name.lower(), self.dataset_name, self.dataset_seed, SAVE_NAME + ".png")
                         plt.savefig(save_path)

@@ -52,51 +52,54 @@ class Metrics():
         return macro_f1 * 100
 
     @staticmethod
-    def focusratio(heatmap, bins):
+    def focusratio(heatmap, bins, threshold=0.5):
         """
             Focus Ratio
 
+            Input
             heatmap: tensor o lista con mapa de calor de la gradcam
             bins: tensor o lista con bins que corresponden a la escala a predecir
-        """
-        axis: int = 0 # 0: filas (frecuencia), 1: columnas (tiempo)
-        invert_vertical: bool = False # True si tus bins están definidos "desde abajo"
-        normalize: bool = True
-        aggregate_along_time: bool = True # sumar sobre tiempo (columnas) antes
+            threshold: umbral en [0,1] aplicado al perfil de energía por fila determinar si un bin está activo
 
+            Returns:
+            fr: Focus Ratio
+            AB_count: Total de pixeles activados en bins relevantes
+            NAB_count: Total de pixeles activados en bins no relevantes
+            AB_pixels: Arreglo de pixeles AB
+            NAB_pixels: Arreglo de pixeles NAB
+        """
         if heatmap.ndim != 2:
             raise ValueError("heatmap debe ser un array 2D")
+
         H, W = heatmap.shape
 
         hm = heatmap.astype(np.float32)
-        if normalize:
-            hm = hm - hm.min()
-            hm = hm / (hm.max() + 1e-8)
 
-        if axis == 0:
-            valid = np.array([b for b in bins if 0 <= b < H], dtype=int)
-            if invert_vertical:
-                valid = (H - 1) - valid
-            if aggregate_along_time:
-                # Perfil de frecuencia (suma sobre tiempo)
-                row_energy = hm.sum(axis=1)  # (H,)
-                num = float(row_energy[valid].sum())
-                den = float(row_energy.sum())
-                return num / den if den > 0 else 0.0
-            else:
-                scale_mask = np.zeros_like(hm, dtype=bool)
-                scale_mask[valid, :] = True
-        else:
-            valid = np.array([b for b in bins if 0 <= b < W], dtype=int)
-            if aggregate_along_time:
-                col_energy = hm.sum(axis=0)  # (W,)
-                num = float(col_energy[valid].sum())
-                den = float(col_energy.sum())
-                return num / den if den > 0 else 0.0
-            else:
-                scale_mask = np.zeros_like(hm, dtype=bool)
-                scale_mask[:, valid] = True
+        # Normalizar heatmap a [0,1]
+        hm -= hm.min()
+        hm /= (hm.max() + 1e-8)
 
-        num = float((hm * scale_mask).sum())
-        den = float(hm.sum())
-        return num / den if den > 0 else 0.0
+        # Activaciones pixel a pixel
+        activated_pixels = hm > threshold   # (H, W)
+
+        # Bins relevantes dentro de rango
+        valid_bins = np.array([b for b in bins if 0 <= b < H], dtype=int)
+
+        # Mascara de relevance
+        relevant_mask = np.zeros((H, W), dtype=bool)
+        relevant_mask[valid_bins, :] = True
+
+        # Pixel AB = activo Y relevante
+        AB_pixels = activated_pixels & relevant_mask
+
+        # Pixel NAB = activo Y NO relevante
+        NAB_pixels = activated_pixels & (~relevant_mask)
+
+        AB_count = int(AB_pixels.sum())
+        NAB_count = int(NAB_pixels.sum())
+        total_count = AB_count + NAB_count
+
+        # Focus ratio
+        fr = AB_count / total_count if total_count > 0 else 0.0
+
+        return fr, AB_count, NAB_count, AB_pixels, NAB_pixels, activated_pixels, relevant_mask

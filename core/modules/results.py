@@ -19,9 +19,12 @@ class Results():
         header_line = ""
         self.ablation_test = ABLATION_TEST
 
-        if (self.ablation_test == False):
+        if (self.ablation_test == False and MODEL_NAME is not None):
             header_line = "dataset,seed,test_accuracy,test_macrof1,test_fr\n"
             FILE_NAME = MODEL_NAME.lower()
+        if (self.ablation_test == False and MODEL_NAME is None):
+            header_line = "model,seed,test_accuracy,test_macrof1,test_fr\n"
+            FILE_NAME = "explainability"
         else:
             header_line = "model,seed,test_accuracy,test_macrof1,test_fr\n"
             FILE_NAME = "ablation"

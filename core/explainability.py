@@ -1,10 +1,10 @@
 """
-@Date         : 24-11-2025
+@Date         : 01-12-2025
 @Author       : Felipe Gutiérrez Carilao
 @Affiliation  : Universidad Andrés Bello
 @Email        : f.gutierrezcarilao@uandresbello.edu
 @Module       : core
-@File         : ablation_test.py
+@File         : explainability.py
 """
 
 from termcolor import colored
@@ -19,9 +19,8 @@ from modules.results import Results
 from modules.stats import Stats
 
 DATASET_NAME = "musicbench_logspec"
-MODEL_LIST = ["CNN",
-            "LSTM",
-            "CNNGRU"]
+MODEL_LIST = ["CNN14",
+            "KEYR2"]
 SEED_LIST = [123, 456, 789]
 NUM_EPOCHS = 100
 
@@ -29,13 +28,13 @@ MODEL_TOTAL = len(MODEL_LIST)
 SEED_TOTAL = len(SEED_LIST)
 
 if __name__ == "__main__":
-    print(colored(f"[!] Starting ablation test...\n", 'red'))
+    print(colored(f"[!] Starting explainability test...\n", 'red'))
 
     results = Results()
-    results.setup(None, True)
+    results.setup(None)
 
     stats = Stats()
-    stats.setup(None, MODEL_LIST, True)
+    stats.setup(None, MODEL_LIST)
 
     for md_i in range(MODEL_TOTAL):
         MODEL_NAME = MODEL_LIST[md_i]
@@ -69,17 +68,12 @@ if __name__ == "__main__":
             cleanup.setup(MODEL_NAME, DATASET_NAME, SEED)
             cleanup.start()
 
-            print(colored("\n[Paso 5] Entrenando modelo...", 'yellow'))
-            model_train = Train()
-            model_train.setup(model, MODEL_NAME, DATASET_NAME, SEED, NUM_EPOCHS, y_train, unique_labels, train_loader, val_loader)
-            model_train.start()
-
-            print(colored("\n[Paso 6] Validando modelo...", 'yellow'))
+            print(colored("\n[Paso 5] Validando modelo...", 'yellow'))
             model_test = Test()
-            model_test.setup(model, gradcam_layer, MODEL_NAME, DATASET_NAME, SEED, test_loader, True)
+            model_test.setup(model, gradcam_layer, MODEL_NAME, DATASET_NAME, SEED, test_loader)
             test_acc, test_f1, test_fr = model_test.start()
 
-            print(colored("\n[Paso 7] Guardando resultados...", 'yellow'))
+            print(colored("\n[Paso 6] Guardando resultados...", 'yellow'))
             results.save(MODEL_NAME.lower(), SEED, test_acc, test_f1, test_fr)
 
     print(colored("\n[!] Calculando resultados finales...", 'red'))
